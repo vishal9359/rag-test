@@ -1,0 +1,19 @@
+ACME RoboVac X9 - Troubleshooting Guide
+
+E01 - LiDAR obstructed:
+  Wipe the top sensor dome with a microfiber cloth. Avoid alcohol-based cleaners.
+
+E02 - Side brush stuck:
+  Remove hair / fibers from the brush axle. Replace brush every 6 months.
+
+E03 - Battery not charging:
+  Check that the dock contacts are clean. If error persists for >24 hours,
+  contact support. The battery is non-user-serviceable.
+
+E04 - Map lost / re-mapping repeatedly:
+  Ensure consistent lighting on each floor. Heavy seasonal furniture changes
+  can trigger remapping; clear the saved map and re-run a full mapping pass.
+
+Pairing:
+  Open the ACME Home app, tap "Add device", and hold the dock button for 5
+  seconds until the LED pulses. Use the 2.4 GHz network during pairing.

@@ -1,0 +1,13 @@
+ACME RoboVac X9 - Product Specifications
+
+Battery: 5200 mAh Li-ion, runtime up to 180 minutes on Eco mode.
+Suction: 4000 Pa, three modes (Eco, Standard, Turbo).
+Navigation: LiDAR + visual SLAM, supports multi-floor mapping (up to 4 floors).
+Connectivity: Wi-Fi 2.4 GHz / 5 GHz, Bluetooth 5.2, Matter-over-Thread.
+Dustbin: 600 ml, washable HEPA filter.
+Warranty: 24 months limited warranty, extendable to 36 months with registration.
+Price (MSRP): USD 649.
+
+Known Limitations:
+- Cannot climb thresholds higher than 22 mm.
+- Carpet detection may be inaccurate on dark-colored shag rugs.

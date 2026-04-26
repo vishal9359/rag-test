@@ -1,0 +1,15 @@
+ACME Corp - Leave Calculation Rules
+
+Pro-rating:
+- Annual leave entitlement is pro-rated for partial years of service.
+- Pro-rated formula: (months_worked / 12) * 24 days, rounded down to whole days.
+
+Carry-over:
+- Up to 5 unused leave days carry over to the next calendar year.
+- Carried-over days expire at the end of Q1 of the new year.
+
+Counting:
+- Leave taken counts against the entitlement of the year in which it was taken.
+- Maternity and paternity leave do NOT count against the 24-day annual leave.
+- Sick leave beyond the 12-day cap requires HR approval and may be unpaid.
+- Public holidays do not count as annual leave.
