@@ -1,8 +1,76 @@
 # multiagent_rag
 
-A teachable, production-shaped **multi-agent RAG system with a Supervisor**, built on **LangGraph** and **local Ollama models** (no cloud calls). Designed for running on a GPU server.
+A reference implementation of a **multi-agent Retrieval-Augmented Generation (RAG) system with a Supervisor pattern**, built on **LangGraph** and **local Ollama models** (no cloud calls). Designed for running on a GPU server, and structured so the architecture maps 1:1 to real-world enterprise AI assistants like Glean, Intercom Fin, Harvey, and customer-support copilots.
 
-The goal is to make every *type* of supervisor decision visible in code — routing, decomposition, retrieval grading, draft critique, bounded revision, and budget enforcement.
+---
+
+## What this project does (in 30 seconds)
+
+Given a user's natural-language question, the system:
+
+1. **Plans** — decomposes the question into a typed list of sub-questions (HR / Product / General / Math)
+2. **Routes** — sends each sub-question to the right specialist agent
+3. **Retrieves** — pulls from domain-specific Chroma knowledge bases (one per domain)
+4. **Grades** — checks each retrieval for relevance *before* generating an answer (skips generation if irrelevant)
+5. **Composes** — writes the final answer with citations, using all the gathered facts
+6. **Critiques** — checks the draft for grounding (no hallucinated claims)
+7. **Revises once** if the critic rejects, then **finishes**
+
+A **rule-based Supervisor** orchestrates all of this. It makes routing, budget, and termination decisions without spending LLM tokens — the LLM intelligence lives in dedicated workers (planner, grader, critic).
+
+> 📖 The goal is to make every *type* of supervisor decision visible in code — routing, decomposition, retrieval grading, draft critique, bounded revision, and budget enforcement — so you can lift the pattern into your own product.
+
+---
+
+## What you can do with it (out of the box)
+
+The shipped sample knowledge base contains fictional **ACME Corp** data:
+
+- **HR policies** — leave entitlements, remote work, reimbursements, pro-rating rules
+- **Product specs & troubleshooting** — for the fictional ACME RoboVac X9
+
+You can ask things like:
+
+| Question | What the system does |
+|---|---|
+| *"How many days of paid leave do I get? If I joined 8 months ago and took 5 days, how many remain?"* | planner → 2× HR-RAG → math solver → writer → critic |
+| *"Suction power of the RoboVac X9, and how does 4000 Pa compare to typical robot vacuums?"* | planner → product-RAG + general-knowledge fusion → writer |
+| *"My RoboVac shows error E03. What should I do?"* | product-RAG (single hop) → writer |
+| *"Explain RAG in one sentence."* | general-knowledge only — the KB is **not** touched (that's an automatic supervisor decision) |
+
+Run `python app.py` and you'll see every supervisor decision and every worker's output streamed live.
+
+---
+
+## What real-world problems this pattern solves
+
+The exact "Supervisor + domain-specialist RAG agents + critic" topology is in production at scale across:
+
+| Domain | Real product example | Maps to our agents |
+|---|---|---|
+| Enterprise IT/HR helpdesk | Glean, Moveworks, MS Copilot for M365 | `policy_rag` + `product_rag` + math/lookup |
+| Customer support automation | Intercom Fin, Zendesk AI, Salesforce Agentforce | Specialist RAG per product line + critic |
+| Field service technical support | ServiceNow Now Assist, Aquant | Manuals + troubleshooting + warranty (the RoboVac shape) |
+| Legal & compliance research | Harvey, Hebbia, Robin AI | Internal-contracts RAG + statute RAG + math |
+| Healthcare clinical decision support | Abridge, Hippocratic AI | Patient-record RAG + drug-interaction DB + guidelines + critic |
+| Financial advisory | Bloomberg GPT, Morgan Stanley's internal assistant | Account RAG + market data + regulation RAG + math |
+| Software engineering assistants | Cursor, Sourcegraph Cody, Cognition Devin | Codebase RAG + docs RAG + logs + planner |
+
+**Why this pattern keeps appearing**: real organizations have multiple, separately-governed knowledge bases. A single mega-RAG over all of them retrieves worse than domain-specialized retrievers behind a router. That's the supervisor's job.
+
+---
+
+## How to make it solve YOUR problem
+
+Swap the corpus and the tools — keep the architecture.
+
+1. **Drop your real docs** into `sample_docs/<your_domain>/` (PDF, txt, etc.)
+2. **Add a domain** in [ingest.py](ingest.py) (`DOMAINS` dict) and [agents.py](agents.py) (one new `_make_rag_node` call)
+3. **Update the planner prompt** so it knows about your new domain
+4. **Plug in real APIs** as additional agents — CRM lookup, ticket fetch, SQL query, calculator
+5. **(Optional) Add a `safety` agent** for PII / refusal / out-of-scope detection
+
+The Supervisor, planner, critic, and bounded-revision logic are domain-agnostic — they work unchanged.
 
 ---
 
