@@ -3,20 +3,22 @@
 The supervisor routes by domain, so each domain gets its OWN collection — that
 keeps retrieval focused and lets us measure relevance per agent.
 
-Run once:
+Embeddings come from `providers.py`, so this works with either local Ollama
+or an OpenAI-compatible endpoint depending on the LLM_PROVIDER env var.
+
+Run once (or after switching providers):
     python ingest.py
 """
 from pathlib import Path
 
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_ollama import OllamaEmbeddings
 from langchain_chroma import Chroma
+
+from providers import PERSIST_DIR, PROVIDER, make_embeddings
 
 ROOT = Path(__file__).parent
 DOCS_DIR = ROOT / "sample_docs"
-PERSIST_DIR = str(ROOT / "chroma_db")
-EMBED_MODEL = "nomic-embed-text"   # ollama pull nomic-embed-text
 
 DOMAINS = {
     "hr": "hr_kb",
@@ -45,12 +47,13 @@ def ingest_domain(subfolder: str, collection: str, embeddings) -> int:
 
 
 def main():
-    embeddings = OllamaEmbeddings(model=EMBED_MODEL)
+    print(f"Provider: {PROVIDER}  ->  persist dir: {PERSIST_DIR}")
+    embeddings = make_embeddings()
     for subfolder, collection in DOMAINS.items():
         n = ingest_domain(subfolder, collection, embeddings)
         if n:
             print(f"Ingested {n} chunks into '{collection}'")
-    print(f"Done. Persisted to {PERSIST_DIR}")
+    print("Done.")
 
 
 if __name__ == "__main__":

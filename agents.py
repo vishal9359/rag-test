@@ -1,28 +1,21 @@
 """Worker agents. Each one is a node fn: AgentState -> partial state update.
 
-Local Ollama models throughout — no cloud calls.
+LLM + embeddings come from `providers.py` so the same agents work with either
+local Ollama or any OpenAI-compatible endpoint — switch via LLM_PROVIDER env var.
 """
 from pathlib import Path
 from typing import Literal
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_chroma import Chroma
 from pydantic import BaseModel, Field
 
+from providers import PERSIST_DIR, make_embeddings, make_llm
 from state import AgentState, StepResult, SubQuestion
 
-# ----------------------------------------------------------------------
-# Local models
-# ----------------------------------------------------------------------
-LLM_MODEL = "llama3.1:8b"
-EMBED_MODEL = "nomic-embed-text"
-OLLAMA_BASE_URL = "http://localhost:11434"
-PERSIST_DIR = str(Path(__file__).parent / "chroma_db")
-
-llm = ChatOllama(model=LLM_MODEL, base_url=OLLAMA_BASE_URL, temperature=0)
-embeddings = OllamaEmbeddings(model=EMBED_MODEL, base_url=OLLAMA_BASE_URL)
+llm = make_llm(temperature=0)
+embeddings = make_embeddings()
 
 
 def _retriever(collection: str, k: int = 4):

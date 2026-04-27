@@ -1,6 +1,6 @@
 # multiagent_rag
 
-A reference implementation of a **multi-agent Retrieval-Augmented Generation (RAG) system with a Supervisor pattern**, built on **LangGraph** and **local Ollama models** (no cloud calls). Designed for running on a GPU server, and structured so the architecture maps 1:1 to real-world enterprise AI assistants like Glean, Intercom Fin, Harvey, and customer-support copilots.
+A reference implementation of a **multi-agent Retrieval-Augmented Generation (RAG) system with a Supervisor pattern**, built on **LangGraph** with a pluggable model backend — works with **local Ollama** (default) or any **OpenAI-compatible API** (real OpenAI, Azure OpenAI, vLLM, internal gateway). Structured so the architecture maps 1:1 to real-world enterprise AI assistants like Glean, Intercom Fin, Harvey, and customer-support copilots.
 
 ---
 
@@ -136,6 +136,7 @@ The supervisor itself has **zero LLM calls** — see [supervisor.py](supervisor.
 ```
 multiagent_rag/
 ├── requirements.txt
+├── providers.py           # LLM + embeddings factory (Ollama or OpenAI)
 ├── ingest.py              # one-time: builds two Chroma collections
 ├── state.py               # AgentState (plan, draft, grounded, budget...)
 ├── agents.py              # all 7 worker nodes
@@ -153,33 +154,68 @@ multiagent_rag/
 
 ---
 
-## Local model setup (Ollama)
+## Model backend (Ollama or OpenAI)
 
-Every model is local. Default choices:
+The model layer is selected at runtime via the `LLM_PROVIDER` environment variable. Both providers use the same agent code — only [providers.py](providers.py) changes the underlying client.
 
-| Purpose | Model | Pull |
-|---|---|---|
-| Chat / structured output | `llama3.1:8b` | `ollama pull llama3.1:8b` |
-| Embeddings | `nomic-embed-text` | `ollama pull nomic-embed-text` |
+| Provider | When to use | LLM default | Embeddings default |
+|---|---|---|---|
+| `ollama` *(default)* | GPU server with local models, no API cost, full data privacy | `llama3.1:8b` | `nomic-embed-text` |
+| `openai` | GPU unavailable, faster iteration, or "internal OpenAI-compatible" endpoint (Azure / vLLM / company gateway) | `gpt-4o-mini` | `text-embedding-3-small` |
 
-Both are configured at the top of [agents.py](agents.py) — change `LLM_MODEL` to `qwen2.5:14b` or `llama3.1:70b` if your GPU has the headroom. If Ollama runs on a different host than Python, change `OLLAMA_BASE_URL`.
+> **Important — embedding dimensions differ between providers** (Ollama `nomic-embed-text` = 768d, OpenAI `text-embedding-3-small` = 1536d). The Chroma persist directory is therefore namespaced per provider (`chroma_db_ollama/`, `chroma_db_openai/`) so they coexist without collision. **Run `python ingest.py` once after switching providers.**
+
+### Option A — Ollama (local, default)
+
+```bash
+ollama serve
+ollama pull llama3.1:8b
+ollama pull nomic-embed-text
+# LLM_PROVIDER defaults to "ollama" — no env vars required
+```
+
+Optional overrides:
+
+```bash
+export OLLAMA_BASE_URL=http://gpu-server.internal:11434
+export OLLAMA_LLM_MODEL=qwen2.5:14b
+export OLLAMA_EMBED_MODEL=nomic-embed-text
+```
 
 > Structured output (`with_structured_output`) needs a tool-calling model. `llama3.1`, `qwen2.5`, and `mistral` all support it.
+
+### Option B — OpenAI / OpenAI-compatible API
+
+```bash
+export LLM_PROVIDER=openai
+export OPENAI_API_KEY=sk-...
+# Optional — point at Azure, vLLM, or your company's internal gateway:
+export OPENAI_BASE_URL=https://your-internal-gateway.example.com/v1
+# Optional model overrides:
+export OPENAI_LLM_MODEL=gpt-4o-mini
+export OPENAI_EMBED_MODEL=text-embedding-3-small
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:LLM_PROVIDER = "openai"
+$env:OPENAI_API_KEY = "sk-..."
+$env:OPENAI_BASE_URL = "https://your-internal-gateway.example.com/v1"   # if needed
+```
 
 ---
 
 ## Quickstart
 
 ```bash
-# 1. Start Ollama and pull models
-ollama serve
-ollama pull llama3.1:8b
-ollama pull nomic-embed-text
-
-# 2. Install Python deps (Python 3.10+)
+# 1. Install Python deps (Python 3.10+)
 pip install -r requirements.txt
 
-# 3. Build the vector store (one-time)
+# 2. Choose a provider — see "Model backend" above
+#    (default is Ollama; for OpenAI export LLM_PROVIDER=openai + OPENAI_API_KEY)
+
+# 3. Build the vector store (one-time per provider)
 python ingest.py
 
 # 4. Run the example queries
@@ -264,11 +300,15 @@ The split here gives you:
 
 ## Configuration knobs
 
-| Knob | File | Default |
+| Knob | Where | Default |
 |---|---|---|
-| LLM model | [agents.py](agents.py) | `llama3.1:8b` |
-| Embedding model | [agents.py](agents.py), [ingest.py](ingest.py) | `nomic-embed-text` |
-| Ollama URL | [agents.py](agents.py) | `http://localhost:11434` |
+| Provider switch | env `LLM_PROVIDER` | `ollama` |
+| Ollama LLM | env `OLLAMA_LLM_MODEL` | `llama3.1:8b` |
+| Ollama embeddings | env `OLLAMA_EMBED_MODEL` | `nomic-embed-text` |
+| Ollama URL | env `OLLAMA_BASE_URL` | `http://localhost:11434` |
+| OpenAI LLM | env `OPENAI_LLM_MODEL` | `gpt-4o-mini` |
+| OpenAI embeddings | env `OPENAI_EMBED_MODEL` | `text-embedding-3-small` |
+| OpenAI base URL (Azure / internal) | env `OPENAI_BASE_URL` | unset (real OpenAI) |
 | Chunk size / overlap | [ingest.py](ingest.py) | `600 / 80` |
 | Top-k retrieval | [agents.py `_retriever`](agents.py) | `4` |
 | Max revisions after critic | [supervisor.py](supervisor.py) | `1` |
