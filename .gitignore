@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Local Chroma stores (rebuild with `python ingest.py`)
+chroma_db_ollama/
+chroma_db_openai/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

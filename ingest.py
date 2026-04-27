@@ -4,7 +4,7 @@ The supervisor routes by domain, so each domain gets its OWN collection — that
 keeps retrieval focused and lets us measure relevance per agent.
 
 Embeddings come from `providers.py`, so this works with either local Ollama
-or an OpenAI-compatible endpoint depending on the LLM_PROVIDER env var.
+or an OpenAI-compatible endpoint depending on `PROVIDER` in `config.py`.
 
 Run once (or after switching providers):
     python ingest.py

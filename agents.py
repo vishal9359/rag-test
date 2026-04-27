@@ -1,7 +1,7 @@
 """Worker agents. Each one is a node fn: AgentState -> partial state update.
 
 LLM + embeddings come from `providers.py` so the same agents work with either
-local Ollama or any OpenAI-compatible endpoint — switch via LLM_PROVIDER env var.
+local Ollama or any OpenAI-compatible endpoint — choose by editing `config.py`.
 """
 from pathlib import Path
 from typing import Literal
