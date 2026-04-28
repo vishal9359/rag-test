@@ -3,8 +3,8 @@
 EDIT THIS FILE to switch between local Ollama and an OpenAI-compatible API.
 No environment variables, no shell exports — just change PROVIDER below.
 
-WARNING: do NOT commit real API keys. Replace the placeholder OPENAI_API_KEY
-with your value locally and keep it out of version control.
+WARNING: do NOT commit real API keys or credentials. Replace placeholder values
+with your real values locally and keep them out of version control.
 """
 
 # =====================================================================
@@ -24,15 +24,30 @@ OLLAMA_EMBED_MODEL = "nomic-embed-text"
 # =====================================================================
 # OpenAI / OpenAI-compatible API  — used when PROVIDER == "openai"
 # ---------------------------------------------------------------------
-# OPENAI_BASE_URL:
-#   - None              -> public api.openai.com
-#   - any other URL     -> Azure OpenAI, vLLM, an internal company gateway,
-#                          or any OpenAI-compatible endpoint.
-# Examples:
-#   OPENAI_BASE_URL = "https://your-internal-gateway.example.com/v1"
-#   OPENAI_BASE_URL = "https://<resource>.openai.azure.com/openai/v1"
+# Works with: real OpenAI, Azure OpenAI, vLLM, internal company gateways,
+# or any endpoint that speaks the OpenAI Chat Completions / Embeddings API.
 # =====================================================================
-OPENAI_API_KEY = "sk-replace-me"
-OPENAI_BASE_URL = None
-OPENAI_LLM_MODEL = "gpt-4o-mini"
+OPENAI_BASE_URL = "http://localhost:11434"
+OPENAI_LLM_MODEL = "qwen2.5-coder:14b"
+
+# NOTE: if your OPENAI_BASE_URL points at an internal Ollama-backed gateway,
+# `text-embedding-3-small` may not exist there — use whatever embedding model
+# your gateway actually exposes (e.g. "nomic-embed-text").
 OPENAI_EMBED_MODEL = "text-embedding-3-small"
+
+# Per-request timeout in seconds. Generous default for slow internal gateways.
+OPENAI_TIMEOUT_SECONDS = 600
+
+# API key. If your gateway authenticates via custom headers instead, leave
+# this empty — providers.py will pass a placeholder so the SDK accepts it.
+OPENAI_API_KEY = ""
+
+# Headers attached to every request. Use this for internal gateways that
+# authenticate via headers (e.g. "x-dep-ticket"). Fill in user-specific
+# values before running.
+OPENAI_CUSTOM_HEADERS = {
+    "x-dep-ticket": "credential:",
+    "User-Type": "AD_ID",
+    "User-Id": "",
+    "Send-System-Name": "rvc-api-module",
+}

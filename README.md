@@ -193,14 +193,34 @@ In `config.py`:
 
 ```python
 PROVIDER = "openai"
-OPENAI_API_KEY     = "sk-..."                                    # your key
-OPENAI_BASE_URL    = None                                        # real OpenAI
-# OPENAI_BASE_URL  = "https://your-internal-gateway.example.com/v1"   # internal/Azure/vLLM
-OPENAI_LLM_MODEL   = "gpt-4o-mini"
-OPENAI_EMBED_MODEL = "text-embedding-3-small"
+
+OPENAI_BASE_URL        = "http://localhost:11434"        # or your internal gateway
+OPENAI_LLM_MODEL       = "qwen2.5-coder:14b"             # or gpt-4o-mini, etc.
+OPENAI_EMBED_MODEL     = "nomic-embed-text"              # whatever your gateway exposes
+OPENAI_TIMEOUT_SECONDS = 600
+
+# Either set OPENAI_API_KEY = "sk-..." for real OpenAI, OR leave it empty
+# and put your auth in OPENAI_CUSTOM_HEADERS (typical for internal gateways).
+OPENAI_API_KEY = ""
+
+OPENAI_CUSTOM_HEADERS = {
+    "x-dep-ticket":     "credential:<paste-your-credential>",
+    "User-Type":        "AD_ID",
+    "User-Id":          "<your-AD-id>",
+    "Send-System-Name": "rvc-api-module",
+}
 ```
 
-> ⚠️  **Do not commit your real API key.** Edit `config.py` locally only — consider adding `config.py` to `.gitignore` if you push this repo, or keep a clean copy committed and only change values on your machine.
+How the OpenAI options are forwarded:
+
+| `config.py` field | Forwarded to |
+|---|---|
+| `OPENAI_BASE_URL` | `ChatOpenAI(base_url=...)` and `OpenAIEmbeddings(base_url=...)` |
+| `OPENAI_API_KEY` | `api_key=...` (placeholder used when empty so the SDK accepts it) |
+| `OPENAI_TIMEOUT_SECONDS` | `timeout=...` per request |
+| `OPENAI_CUSTOM_HEADERS` | `default_headers=...` — sent on **every** request, for header-based auth like `x-dep-ticket` |
+
+> ⚠️  **Do not commit real API keys or credentials.** Edit `config.py` locally only — or `git update-index --skip-worktree config.py` to make git ignore your local edits to it.
 
 ---
 
