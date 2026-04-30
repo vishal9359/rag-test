@@ -17,14 +17,25 @@ Write-Host "`n=== Downloading wheels (target: Ubuntu Linux x86_64, CPython 3.12)
 # so it can't be silently broken by an editor or a missing backtick.
 python -m pip download --dest wheels --requirement requirements.txt --python-version 3.12 --implementation cp --abi cp312 --platform manylinux2014_x86_64 --platform manylinux_2_17_x86_64 --platform manylinux_2_28_x86_64 --only-binary=:all:
 
-Write-Host "`n=== Top-up: Linux-only deps that pip skips on Windows ==="
-# Some packages declare their deps with `sys_platform != "win32"` markers
-# (e.g. uvicorn[standard] -> uvloop). pip download evaluates those markers
-# on the local OS, so on Windows it skips them entirely — even with
-# --platform manylinux. Re-pull each one explicitly with --no-deps.
+Write-Host "`n=== Top-up: deps that pip skips on Windows due to env markers ==="
+# Some packages declare deps with environment markers that evaluate to
+# False on Windows but True on Linux. pip download evaluates markers
+# against the LOCAL machine, so it skips them entirely — even with
+# --platform manylinux. Two real cases in this project's tree:
+#
+#   uvicorn[standard] -> uvloop
+#       marker: sys_platform != "win32" and ...
+#       (uvloop is Linux/macOS only)
+#
+#   huggingface-hub -> hf-xet
+#       marker: platform_machine == "x86_64" or "amd64" or "arm64" or "aarch64"
+#       (case-sensitive: Windows reports "AMD64", marker uses "amd64", so False)
+#
+# Re-pull each one explicitly with --no-deps so it lands in wheels/.
 $linuxOnlyDeps = @(
     "uvloop>=0.15.1"
-    # add more here if other Linux-only conditional deps surface
+    "hf-xet>=1.1.3,<2.0.0"
+    # add more here if other conditional deps surface
 )
 foreach ($dep in $linuxOnlyDeps) {
     Write-Host "  -> $dep"
@@ -68,7 +79,7 @@ Write-Host "    $pure pure-Python wheels (py3-none-any)"
 Write-Host "    $($total - $linux - $pure) other`n"
 
 Write-Host "Critical packages present:"
-foreach ($pkg in @('chromadb', 'sqlalchemy', 'pydantic_core', 'onnxruntime', 'tokenizers', 'numpy', 'uvicorn', 'uvloop')) {
+foreach ($pkg in @('chromadb', 'sqlalchemy', 'pydantic_core', 'onnxruntime', 'tokenizers', 'numpy', 'uvicorn', 'uvloop', 'hf_xet')) {
     $hit = Get-ChildItem wheels | Where-Object { $_.Name -ilike "${pkg}-*" } | Select-Object -First 1
     if ($hit) {
         Write-Host "  [OK] $($hit.Name)" -ForegroundColor Green
