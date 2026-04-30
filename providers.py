@@ -10,11 +10,19 @@ switching providers.
 """
 from pathlib import Path
 
+from chromadb.config import Settings
+
 import config
 
 PROVIDER = config.PROVIDER.lower()
 
 PERSIST_DIR = str(Path(__file__).parent / f"chroma_db_{PROVIDER}")
+
+# Disable chromadb's anonymous PostHog telemetry. The posthog version pulled
+# in by chromadb's deps has a `capture()` signature mismatch — telemetry
+# calls fail noisily but ingest/retrieval still work. Switching it off
+# cleans up the logs.
+CHROMA_SETTINGS = Settings(anonymized_telemetry=False)
 
 
 def _openai_common_kwargs() -> dict:

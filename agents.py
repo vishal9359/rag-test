@@ -11,7 +11,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_chroma import Chroma
 from pydantic import BaseModel, Field
 
-from providers import PERSIST_DIR, make_embeddings, make_llm
+from providers import CHROMA_SETTINGS, PERSIST_DIR, make_embeddings, make_llm
 from state import AgentState, StepResult, SubQuestion
 
 llm = make_llm(temperature=0)
@@ -23,6 +23,7 @@ def _retriever(collection: str, k: int = 4):
         collection_name=collection,
         embedding_function=embeddings,
         persist_directory=PERSIST_DIR,
+        client_settings=CHROMA_SETTINGS,
     ).as_retriever(search_kwargs={"k": k})
 
 

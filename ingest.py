@@ -15,7 +15,7 @@ from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 
-from providers import PERSIST_DIR, PROVIDER, make_embeddings
+from providers import CHROMA_SETTINGS, PERSIST_DIR, PROVIDER, make_embeddings
 
 ROOT = Path(__file__).parent
 DOCS_DIR = ROOT / "sample_docs"
@@ -42,6 +42,7 @@ def ingest_domain(subfolder: str, collection: str, embeddings) -> int:
         embedding=embeddings,
         persist_directory=PERSIST_DIR,
         collection_name=collection,
+        client_settings=CHROMA_SETTINGS,
     )
     return len(chunks)
 
