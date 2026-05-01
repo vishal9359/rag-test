@@ -9,6 +9,8 @@ or an OpenAI-compatible endpoint depending on `PROVIDER` in `config.py`.
 Run once (or after switching providers):
     python ingest.py
 """
+import _silence_chroma  # noqa: F401  — MUST be the first import (silences telemetry)
+
 from pathlib import Path
 
 from langchain_community.document_loaders import TextLoader

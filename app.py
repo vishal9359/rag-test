@@ -7,6 +7,8 @@ Run:
     4. python ingest.py     # one-time, builds ./chroma_db
     5. python app.py
 """
+import _silence_chroma  # noqa: F401  — MUST be the first import (silences telemetry)
+
 from langchain_core.messages import HumanMessage
 
 from graph import build_graph

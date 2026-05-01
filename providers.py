@@ -8,6 +8,15 @@ The Chroma persist directory is namespaced per provider so embeddings of
 different dimensions don't collide. Re-run `python ingest.py` once after
 switching providers.
 """
+# Silencing chromadb's broken posthog telemetry must happen before
+# anything else loads chromadb. _silence_chroma is a side-effecting
+# module — importing it patches posthog, sets env vars, and suppresses
+# the chromadb.telemetry logger. Entry points (ingest.py / app.py)
+# already import it first, but importing it here too guarantees the
+# patches are applied even if providers is imported in isolation
+# (e.g. from a test or a notebook).
+import _silence_chroma  # noqa: F401  — must run before `import chromadb`
+
 from pathlib import Path
 
 from chromadb.config import Settings
