@@ -39,11 +39,21 @@ def _truncate(s: str, n: int = 240) -> str:
 def run(question: str, verbose: bool = True) -> str:
     graph = build_graph()
     state = initial_state(question)
-    last_state: dict = {}
+
+    # graph.stream() yields one chunk per node, each containing only the
+    # PARTIAL state update that node returned. Merge each into accumulated
+    # so the final state has every field (draft, grounded, completed_steps...)
+    # set to the latest value any node wrote.
+    accumulated: dict = dict(state)
 
     for chunk in graph.stream(state, config={"recursion_limit": 60}):
         for node, payload in chunk.items():
-            last_state = payload
+            for k, v in payload.items():
+                if k == "messages":
+                    accumulated.setdefault("messages", []).extend(v)
+                else:
+                    accumulated[k] = v
+
             if not verbose:
                 continue
             if node == "supervisor":
@@ -54,7 +64,7 @@ def run(question: str, verbose: bool = True) -> str:
                 if msgs:
                     print(f"  • {node}: {_truncate(msgs[-1].content)}")
 
-    return last_state.get("draft") or "(no draft produced)"
+    return accumulated.get("draft") or "(no draft produced)"
 
 
 if __name__ == "__main__":
